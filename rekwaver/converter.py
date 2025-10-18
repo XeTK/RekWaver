@@ -7,6 +7,7 @@ from os import makedirs
 import concurrent.futures
 import os
 from pathlib import Path
+
 try:
     from tqdm import tqdm
 except Exception:
@@ -21,31 +22,34 @@ def _is_partial(target: Path, source_path: str) -> tuple[bool, str]:
     """
     try:
         if not target.exists():
-            return True, 'missing'
+            return True, "missing"
         size = target.stat().st_size
         if size == 0:
-            return True, 'empty_file'
+            return True, "empty_file"
 
         # try to compare durations
         try:
             src_info = get_file_info(source_path)
             tgt_info = get_file_info(str(target))
-            src_dur = float(src_info.get('format', {}).get('duration') or 0)
-            tgt_dur = float(tgt_info.get('format', {}).get('duration') or 0)
+            src_dur = float(src_info.get("format", {}).get("duration") or 0)
+            tgt_dur = float(tgt_info.get("format", {}).get("duration") or 0)
             if src_dur > 0 and tgt_dur > 0:
                 if abs(src_dur - tgt_dur) > 1.0:
-                    return True, f'duration_mismatch: src={src_dur:.2f}, tgt={tgt_dur:.2f}'
+                    return (
+                        True,
+                        f"duration_mismatch: src={src_dur:.2f}, tgt={tgt_dur:.2f}",
+                    )
         except Exception:
             # if ffprobe fails for either file, fall back to size heuristic
             pass
 
         # heuristic: very small files are likely partial
         if size < 1024 * 10:  # <10KB
-            return True, 'very_small'
+            return True, "very_small"
 
-        return False, ''
+        return False, ""
     except Exception as e:
-        return False, f'check_error: {e}'
+        return False, f"check_error: {e}"
 
 
 def process_wavs(wavs: List[str], dry_run: bool = False):
@@ -59,19 +63,29 @@ def process_wavs(wavs: List[str], dry_run: bool = False):
             logger.error("Failed to probe %s: %s", path, e)
             continue
 
-        stream = info['streams'][0]
+        stream = info["streams"][0]
 
-        bits = stream.get('bits_per_raw_sample') or stream.get('bits_per_sample')
+        bits = stream.get("bits_per_raw_sample") or stream.get("bits_per_sample")
         bits_per_sample = int(bits)
-        sample_rate = int(stream['sample_rate'])
+        sample_rate = int(stream["sample_rate"])
 
         if bits_per_sample > 24 or sample_rate > 48000:
-            logger.warning("Wav in wrong format: bits_per_sample: %d, sample_rate: %d, loc: %s",
-                           bits_per_sample, sample_rate, path)
+            logger.warning(
+                "Wav in wrong format: bits_per_sample: %d, sample_rate: %d, loc: %s",
+                bits_per_sample,
+                sample_rate,
+                path,
+            )
     logger.info("WAV inspection complete. dry_run=%s", dry_run)
 
 
-def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: bool = False, jobs: int = 1, force: bool = False):
+def process_flacs(
+    flacs: List[str],
+    destination: str = DESTINATION,
+    dry_run: bool = False,
+    jobs: int = 1,
+    force: bool = False,
+):
     updated = []
     total = len(flacs)
     processed = 0
@@ -100,12 +114,19 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
                     if tqdm is not None:
                         tqdm.write(f"Partial target detected ({reason}): {new_path}")
                     else:
-                        logger.warning("Partial target detected (%s): %s", reason, new_path)
+                        logger.warning(
+                            "Partial target detected (%s): %s", reason, new_path
+                        )
                     if dry_run:
                         if tqdm is not None:
-                            tqdm.write(f"DRY RUN: would remove partial and re-encode {new_path}")
+                            tqdm.write(
+                                f"DRY RUN: would remove partial and re-encode {new_path}"
+                            )
                         else:
-                            logger.info("DRY RUN: would remove partial and re-encode %s", new_path)
+                            logger.info(
+                                "DRY RUN: would remove partial and re-encode %s",
+                                new_path,
+                            )
                         updated.append((flac, rekordboxify_path(new_path)))
                         processed += 1
                         continue
@@ -117,9 +138,13 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
                             logger.info("Removed partial target: %s", new_path)
                     except Exception as e:
                         if tqdm is not None:
-                            tqdm.write(f"Failed to remove partial target {new_path}: {e}")
+                            tqdm.write(
+                                f"Failed to remove partial target {new_path}: {e}"
+                            )
                         else:
-                            logger.error("Failed to remove partial target %s: %s", new_path, e)
+                            logger.error(
+                                "Failed to remove partial target %s: %s", new_path, e
+                            )
                         # skip this file if we cannot clean it
                         continue
                 else:
@@ -131,14 +156,30 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
                     processed += 1
                     continue
             if tqdm is not None:
-                tqdm.write(f"[{idx}/{total}] PREP  {Path(path).name} -> {Path(new_path).name} (remaining: {remaining})")
+                tqdm.write(
+                    f"[{idx}/{total}] PREP  {Path(path).name} -> {Path(new_path).name} (remaining: {remaining})"
+                )
             else:
-                logger.info("(%d/%d) Preparing: %s -> %s (remaining: %d)", idx, total, path, new_path, remaining)
+                logger.info(
+                    "(%d/%d) Preparing: %s -> %s (remaining: %d)",
+                    idx,
+                    total,
+                    path,
+                    new_path,
+                    remaining,
+                )
             if dry_run:
                 if tqdm is not None:
-                    tqdm.write(f"DRY RUN: would create dir {dir_path} and convert {path} -> {new_path}")
+                    tqdm.write(
+                        f"DRY RUN: would create dir {dir_path} and convert {path} -> {new_path}"
+                    )
                 else:
-                    logger.info("DRY RUN: would create dir %s and convert %s -> %s", dir_path, path, new_path)
+                    logger.info(
+                        "DRY RUN: would create dir %s and convert %s -> %s",
+                        dir_path,
+                        path,
+                        new_path,
+                    )
                 updated.append((flac, rekordboxify_path(new_path)))
                 processed += 1
                 continue
@@ -148,7 +189,12 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
             if success:
                 updated.append((flac, rekordboxify_path(new_path)))
                 processed += 1
-        logger.info("Finished processing FLACs: processed %d/%d, updated %d entries", processed, total, len(updated))
+        logger.info(
+            "Finished processing FLACs: processed %d/%d, updated %d entries",
+            processed,
+            total,
+            len(updated),
+        )
         return updated
 
     max_workers = jobs if jobs > 0 else (os.cpu_count() or 1)
@@ -195,7 +241,14 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as exe:
         futures = {exe.submit(worker, flac): flac for flac in flacs}
         if tqdm is not None:
-            pbar = tqdm(total=total, desc="Converting FLACs", unit="file", leave=True, position=0, dynamic_ncols=True)
+            pbar = tqdm(
+                total=total,
+                desc="Converting FLACs",
+                unit="file",
+                leave=True,
+                position=0,
+                dynamic_ncols=True,
+            )
         else:
             pbar = None
         try:
@@ -208,7 +261,9 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
                     if pbar is not None:
                         tqdm.write(f"Unexpected worker exception for {flac_item}: {e}")
                     else:
-                        logger.error("Unexpected worker exception for %s: %s", flac_item, e)
+                        logger.error(
+                            "Unexpected worker exception for %s: %s", flac_item, e
+                        )
                     new_loc = None
                     err = str(e)
                 if new_loc:
@@ -227,7 +282,7 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
                 if pbar is not None:
                     pbar.update(1)
         except KeyboardInterrupt:
-            logger.info('Interrupted by user, cancelling remaining jobs...')
+            logger.info("Interrupted by user, cancelling remaining jobs...")
             for f in futures:
                 f.cancel()
             exe.shutdown(wait=False)
@@ -237,5 +292,10 @@ def process_flacs(flacs: List[str], destination: str = DESTINATION, dry_run: boo
         finally:
             if pbar is not None:
                 pbar.close()
-    logger.info("Finished parallel processing FLACs: processed %d/%d, updated %d entries", processed, total, len(updated))
+    logger.info(
+        "Finished parallel processing FLACs: processed %d/%d, updated %d entries",
+        processed,
+        total,
+        len(updated),
+    )
     return updated

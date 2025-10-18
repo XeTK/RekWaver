@@ -7,5 +7,5 @@ This file is intentionally small — the implementation lives in the
 from rekwaver.cli import main
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
