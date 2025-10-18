@@ -1,5 +1,5 @@
 import os
-from rekordboxxml.paths import clean_path, rekordboxify_path, get_new_path
+from rekwaver.paths import clean_path, rekordboxify_path, get_new_path
 
 
 def test_clean_path_file_url():

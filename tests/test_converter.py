@@ -1,6 +1,6 @@
 from pathlib import Path
-import rekordboxxml.converter as conv
-import rekordboxxml.ffmpeg as ffmpeg
+import rekwaver.converter as conv
+import rekwaver.ffmpeg as ffmpeg
 
 
 def test_process_flacs_dry_run(monkeypatch, tmp_path):

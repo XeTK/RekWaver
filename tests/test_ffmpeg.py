@@ -2,7 +2,7 @@ import os
 from subprocess import CompletedProcess
 from pathlib import Path
 
-import rekordboxxml.ffmpeg as ffmpeg
+import rekwaver.ffmpeg as ffmpeg
 
 
 def fake_completed(stdout='{}', stderr='', returncode=0):

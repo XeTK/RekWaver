@@ -1,5 +1,5 @@
 from pathlib import Path
-from rekordboxxml.xmlutil import read_xml, replace_flacs_in_xml
+from rekwaver.xmlutil import read_xml, replace_flacs_in_xml
 
 
 SAMPLE_XML = '''<?xml version="1.0" encoding="UTF-8"?>

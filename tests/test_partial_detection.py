@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from rekordboxxml.converter import _is_partial
-from rekordboxxml.ffmpeg import get_file_info
+from rekwaver.converter import _is_partial
+from rekwaver.ffmpeg import get_file_info
 
 
 def test_is_partial_missing(tmp_path):
